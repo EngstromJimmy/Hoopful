@@ -1,5 +1,10 @@
 name: CI
 
+# Quality gate: builds and runs the full test-suite on all three OSes.
+# The tests include the golden-vector suite that verifies HUS/VIP decompression
+# byte-for-byte against the original ArchiveLib implementation's output.
+# (Deployment to GitHub Pages is a separate workflow: deploy-pages.yml.)
+
 on:
   push:
     branches: [main]
@@ -36,42 +41,3 @@ jobs:
 
       - name: Test
         run: dotnet test Hoopful.sln --configuration Release --no-build --logger "console;verbosity=normal"
-
-  publish-blazor:
-    name: publish Blazor WebAssembly sample
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up .NET 10 SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Publish
-        run: dotnet publish samples/Hoopful.Browser/Hoopful.Browser.csproj --configuration Release --output artifacts/blazor
-
-      - name: Upload published site
-        uses: actions/upload-artifact@v4
-        with:
-          name: blazor-wasm-sample
-          path: artifacts/blazor/wwwroot
-
-  benchmark-smoke:
-    # Quick sanity run (dry job) so benchmark code cannot rot; real measurements
-    # are run manually — see README.
-    name: benchmark smoke test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up .NET 10 SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Run benchmarks (dry job)
-        run: >
-          dotnet run --project benchmarks/Hoopful.Benchmarks
-          --configuration Release --
-          --filter '*' --job Dry

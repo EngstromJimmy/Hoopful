@@ -43,6 +43,17 @@ dotnet publish samples/Hoopful.Browser -c Release
 Requirements: the .NET 10 SDK. No JavaScript frameworks, no npm, no native
 dependencies — the whole thing is C# and CSS.
 
+### Deploy to GitHub Pages
+
+The repo ships a ready-made workflow
+([`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml))
+that publishes the app to GitHub Pages on every push to `main`. One-time setup:
+in the repository go to **Settings → Pages** and set **Source** to
+**GitHub Actions**. That's it — the workflow builds the WebAssembly app,
+fixes the `<base href>` for project sites automatically, adds the SPA fallback
+and `.nojekyll`, and deploys. You can also trigger it manually from the
+Actions tab (`workflow_dispatch`).
+
 ## Use it as a library
 
 All parsing and rendering lives in one dependency-free library,
@@ -88,7 +99,7 @@ vectors produced by the original 1994 C++ implementation (see
 [tests/Hoopful.Tests/Fixtures/FIXTURES.md](tests/Hoopful.Tests/Fixtures/FIXTURES.md)
 for fixture provenance), exercises real sample files, and feeds the parsers
 truncated, bit-flipped and hand-crafted hostile input. CI builds and tests on
-Windows, Linux and macOS and publishes the browser app.
+Windows, Linux and macOS; a separate workflow deploys the app to GitHub Pages.
 
 ## Credits & sources
 
