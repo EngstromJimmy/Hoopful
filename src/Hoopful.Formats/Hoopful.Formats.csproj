@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Hoopful.Formats</RootNamespace>
+    <Description>Readers and renderers for common embroidery file formats (HUS, VIP, DST, EXP, JEF, SEW, KSM, PCS, PEC, PES, VP3, XXX), including a managed implementation of the Greenleaf ArchiveLib decompression used by HUS/VIP. Ported from the original hexreader WinForms application.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+</Project>

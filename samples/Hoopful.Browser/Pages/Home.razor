@@ -1,0 +1,404 @@
+@page "/"
+@using System.Reflection
+@using System.Security.Cryptography
+@using Hoopful.Formats
+@using Hoopful.Formats.Compression
+@using Hoopful.Formats.Rendering
+
+<PageTitle>Hoopful — a hoopful of embroideries</PageTitle>
+
+<div class="hoopful-root" data-theme="@_theme">
+    <a class="skip-link" href="#designs">Skip to the swatchboard</a>
+
+    <div class="frame">
+
+        <aside class="rail">
+            <div class="wordmark" role="img" aria-label="Hoopful">H<span class="hoop-o" aria-hidden="true">​</span><span class="hoop-o" aria-hidden="true">​</span>PFUL</div>
+
+            <div class="rail-bottom">
+                @if (_selfTestPassed is bool passed)
+                {
+                    <span class="qc-tag @(passed ? "" : "qc-fail")" title="@_selfTestDetail">
+                        QC <strong>@(passed ? "✓" : "✗")</strong> @(passed ? "sew far, sew good" : "help me Obi-Wan Kenobi, you're my only hoop")
+                    </span>
+                }
+                <button class="theme-btn" @onclick="ToggleTheme" title="@ThemeTitle" aria-label="@ThemeTitle">
+                    @ThemeIcon
+                </button>
+            </div>
+        </aside>
+
+        <main class="table">
+
+            <header class="masthead">
+                <p class="kicker">Pattern № 001 · Everything stays on your machine</p>
+                <h1>Your hoopful<span class="thread-dot">.</span></h1>
+
+                <div class="pun-reel" aria-hidden="true">
+                    <ul>
+                        <li>Hoop there it is.</li>
+                        <li>Thread carefully.</li>
+                        <li>Make it sew.</li>
+                        <li>Sew far, sew good.</li>
+                        <li>Hooping for the best.</li>
+                        <li>Stitch, please.</li>
+                        <li>Hoop there it is.</li>
+                    </ul>
+                </div>
+                <p class="visually-hidden">A folder browser for embroidery designs.</p>
+
+                <svg class="stitchline-svg" viewBox="0 0 1000 18" preserveAspectRatio="none" aria-hidden="true">
+                    <line class="running" x1="0" y1="9" x2="978" y2="9" />
+                    <polygon class="needle-tip" points="978,3 1000,9 978,15 982,9" />
+                </svg>
+            </header>
+
+            <section class="dock" aria-label="Open designs">
+                <div class="dock-copy">
+                    <h2>Needle little help?</h2>
+                    <p>
+                        Point the hoop at a folder and every design inside gets parsed, decompressed
+                        and drawn — right here in your browser.
+                    </p>
+                    <p>@string.Join(" · ", EmbroideryFormatFactory.SupportedExtensions)</p>
+
+                    @if (_loading)
+                    {
+                        <div class="sewing-status" role="status">
+                            <p class="status-pun">@IndexingPun (@_loadedCount / @_totalCount)</p>
+                            <div class="thread-progress">
+                                <span style="width:@ProgressPercent%"></span>
+                            </div>
+                        </div>
+                    }
+                    else if (_items.Count > 0)
+                    {
+                        <div class="sewing-status" role="status">
+                            <p class="status-pun">
+                                @_items.Count design(s) in the hoop@(_skippedCount > 0 ? $" — {_skippedCount} file(s) left on the cutting-room floor" : "").
+                            </p>
+                        </div>
+                    }
+                </div>
+
+                <div class="dock-actions">
+                    <label class="hoop-label">
+                        <InputFile OnChange="OnFilesSelected" webkitdirectory directory multiple class="hoop-input" />
+                        <span class="hoop-face">
+                            <span class="hoop-kicker">Open a folder</span>
+                            <span class="hoop-cta">Hoop<br />there it is</span>
+                            <span class="hoop-pun">we'll make it sew</span>
+                        </span>
+                    </label>
+                    <label class="files-link">
+                        <InputFile OnChange="OnFilesSelected" multiple class="hoop-input"
+                                   accept="@string.Join(",", EmbroideryFormatFactory.SupportedExtensions)" />
+                        …or thread in single files
+                    </label>
+                </div>
+            </section>
+
+            <section id="designs" class="swatchboard" aria-label="Your designs">
+                <h2 class="board-title">The swatchboard</h2>
+
+                @if (_items.Count == 0 && !_loading)
+                {
+                    <p class="sampler">Nothing pinned yet — open a folder and we'll thread lightly.</p>
+                }
+                else
+                {
+                    <ul class="swatches">
+                        @foreach (IndexedDesign item in _items)
+                        {
+                            <li style="display:contents">
+                                @if (item.Error is not null)
+                                {
+                                    <div class="swatch swatch-frayed">
+                                        <div class="swatch-thumb" aria-hidden="true">✂</div>
+                                        <p class="swatch-name">@item.FileName</p>
+                                        <p class="fray-pun">Stitch, please — this one's frayed.</p>
+                                        <p class="fray-why">@item.Error</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button class="swatch" @onclick="() => Select(item)"
+                                            title="Open @item.FileName">
+                                        <span class="swatch-thumb">@((MarkupString)item.ThumbnailSvg)</span>
+                                        <span class="swatch-name">@item.FileName</span>
+                                        <span class="swatch-meta">
+                                            <span>@item.Design!.NumberOfStitches st</span>
+                                            <span class="spools" aria-label="@item.Design.NumberOfColors colours">
+                                                @foreach (var color in item.Design.Colors.Take(6))
+                                                {
+                                                    <i style="background:@CssColor(color)"></i>
+                                                }
+                                            </span>
+                                        </span>
+                                    </button>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+
+            @if (_selected is { Design: not null } selected)
+            {
+                <div class="viewer-backdrop" @onclick="CloseViewer">
+                    <article class="viewer" role="dialog" aria-modal="true" aria-label="@selected.FileName"
+                             @onclick:stopPropagation="true">
+                        <header class="viewer-head">
+                            <div>
+                                <p class="viewer-kicker">In the hoop</p>
+                                <h2>@selected.FileName</h2>
+                            </div>
+                            <button class="snip-btn" @onclick="CloseViewer">✂ snip</button>
+                        </header>
+
+                        <div class="viewer-facts">
+                            <span><b>@selected.Design.NumberOfStitches</b> stitches (@selected.Design.Stitches.Count records)</span>
+                            <span><b>@selected.Design.NumberOfColors</b> colours
+                                <span class="spools">
+                                    @foreach (var color in selected.Design.Colors)
+                                    {
+                                        <i style="background:@CssColor(color)" title="@CssColor(color)"></i>
+                                    }
+                                </span>
+                            </span>
+                            <span><b>@(selected.Design.Width / 10.0) × @(selected.Design.Height / 10.0)</b> mm</span>
+                        </div>
+
+                        <div class="stitch-switch" role="group" aria-label="Rendering style">
+                            <button class="@(_show3d ? "" : "on")" @onclick="() => _show3d = false">Flat lay</button>
+                            <button class="@(_show3d ? "on" : "")" @onclick="Show3d" title="Bump-mapped thread shading">Make it sew (3D)</button>
+                        </div>
+
+                        <div class="design-stage">
+                            @if (_show3d)
+                            {
+                                @if (selected.BumpMappedPngDataUrl is null)
+                                {
+                                    <p class="rendering-note">Making it sew…</p>
+                                }
+                                else
+                                {
+                                    <img alt="3D shaded rendering of @selected.FileName" src="@selected.BumpMappedPngDataUrl" />
+                                }
+                            }
+                            else
+                            {
+                                @((MarkupString)selected.LargeSvg)
+                            }
+                        </div>
+                    </article>
+                </div>
+            }
+
+            <footer class="hem">
+                <span><em>I will keep you in the hoop.</em></span>
+                <span>Hoopful — parsing, decompression and rendering, entirely in your browser.</span>
+            </footer>
+
+        </main>
+    </div>
+</div>
+
+@code {
+    /// <summary>One entry on the swatchboard: a parsed design or a per-file error.</summary>
+    private sealed class IndexedDesign
+    {
+        public required string FileName { get; init; }
+        public EmbroideryDesign? Design { get; init; }
+        public string ThumbnailSvg { get; init; } = "";
+        public string LargeSvg { get; init; } = "";
+        public string? Error { get; init; }
+
+        /// <summary>Lazily rendered bump-mapped view (data URL), cached per design.</summary>
+        public string? BumpMappedPngDataUrl { get; set; }
+    }
+
+    /// <summary>SHA-256 of the embedded fixture's decompressed output, from the reference C++ implementation.</summary>
+    private const string ExpectedFixtureSha256 =
+        "b6a9778a2376657b61f92348e77e0799b35928db46db60de5c9d01aa75b2f1f4";
+
+    private const int MaxFiles = 2000;
+    private const long MaxFileSize = 32 * 1024 * 1024;
+
+    private static readonly string[] IndexingPuns =
+    [
+        "Making it sew…",
+        "Threading carefully…",
+        "Hooping for the best…",
+        "Stitch by stitch…",
+    ];
+
+    private readonly List<IndexedDesign> _items = [];
+    private IndexedDesign? _selected;
+    private bool _loading;
+    private int _loadedCount;
+    private int _totalCount;
+    private int _skippedCount;
+    private bool _show3d;
+
+    private bool? _selfTestPassed;
+    private string _selfTestDetail = "";
+
+    /// <summary>null = follow the OS, otherwise "light" or "dark".</summary>
+    private string? _theme;
+
+    private string ThemeIcon => _theme switch { "light" => "☀", "dark" => "☾", _ => "◐" };
+
+    private string ThemeTitle => _theme switch
+    {
+        "light" => "Theme: daylight stitching (click for moonlight)",
+        "dark" => "Theme: moonlight stitching (click to follow your system)",
+        _ => "Theme: following your system (click for daylight)",
+    };
+
+    private void ToggleTheme() => _theme = _theme switch
+    {
+        null => "light",
+        "light" => "dark",
+        _ => null,
+    };
+
+    private string IndexingPun => IndexingPuns[(_loadedCount / 12) % IndexingPuns.Length];
+
+    private int ProgressPercent => _totalCount == 0 ? 0 : (int)(100.0 * _loadedCount / _totalCount);
+
+    private static string CssColor(System.Drawing.Color color) => $"#{color.R:x2}{color.G:x2}{color.B:x2}";
+
+    private void Select(IndexedDesign item)
+    {
+        if (item.Design is not null)
+        {
+            _selected = item;
+            _show3d = false;
+        }
+    }
+
+    private void CloseViewer() => _selected = null;
+
+    private async Task Show3d()
+    {
+        _show3d = true;
+        if (_selected is { Design: not null, BumpMappedPngDataUrl: null } item)
+        {
+            StateHasChanged();
+            await Task.Yield(); // let "Making it sew…" paint before the CPU work
+
+            byte[] png = EmbroideryBumpMapRenderer.RenderPng(item.Design, threadWidth: 3, light: 2);
+            item.BumpMappedPngDataUrl = "data:image/png;base64," + Convert.ToBase64String(png);
+        }
+    }
+
+    private async Task OnFilesSelected(InputFileChangeEventArgs eventArgs)
+    {
+        _items.Clear();
+        _selected = null;
+        _skippedCount = 0;
+        _loading = true;
+
+        IReadOnlyList<IBrowserFile> files = eventArgs.GetMultipleFiles(MaxFiles);
+
+        // Load .ytlc colour side-car files first so designs can pick them up, exactly
+        // like the original application looked for "<design file>.ytlc".
+        var colorOverrides = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+        foreach (IBrowserFile file in files)
+        {
+            if (file.Name.EndsWith(".ytlc", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    colorOverrides[file.Name] = await ReadAllBytesAsync(file);
+                }
+                catch (IOException)
+                {
+                    // A broken side-car just means default colours.
+                }
+            }
+        }
+
+        List<IBrowserFile> designFiles = [.. files.Where(f => EmbroideryFormatFactory.IsSupported(f.Name))];
+        _skippedCount = files.Count - designFiles.Count - colorOverrides.Count;
+        _totalCount = designFiles.Count;
+        _loadedCount = 0;
+
+        foreach (IBrowserFile file in designFiles)
+        {
+            _items.Add(await IndexFileAsync(file, colorOverrides));
+            _loadedCount++;
+            StateHasChanged();
+            await Task.Yield(); // keep the UI responsive while indexing
+        }
+
+        _loading = false;
+    }
+
+    private static async Task<IndexedDesign> IndexFileAsync(
+        IBrowserFile file, Dictionary<string, byte[]> colorOverrides)
+    {
+        try
+        {
+            byte[] fileData = await ReadAllBytesAsync(file);
+            EmbroideryDesign design = EmbroideryFormatFactory.Load(fileData, file.Name);
+
+            if (colorOverrides.TryGetValue(file.Name + ".ytlc", out byte[]? ytlc))
+            {
+                EmbroideryFormatFactory.TryApplyColorOverride(design, ytlc);
+            }
+
+            return new IndexedDesign
+            {
+                FileName = file.Name,
+                Design = design,
+                ThumbnailSvg = EmbroiderySvgRenderer.Render(design, threadWidth: 2, background: ""),
+                LargeSvg = EmbroiderySvgRenderer.Render(design, threadWidth: 2, background: ""),
+            };
+        }
+        catch (Exception exception)
+        {
+            return new IndexedDesign { FileName = file.Name, Error = exception.Message };
+        }
+    }
+
+    private static async Task<byte[]> ReadAllBytesAsync(IBrowserFile file)
+    {
+        using var buffer = new MemoryStream();
+        await file.OpenReadStream(MaxFileSize).CopyToAsync(buffer);
+        return buffer.ToArray();
+    }
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            using Stream? resource = Assembly.GetExecutingAssembly()
+                .GetManifestResourceStream("Hoopful.Browser.Fixture.cmp");
+            if (resource is null)
+            {
+                _selfTestPassed = false;
+                _selfTestDetail = "embedded fixture missing";
+                return;
+            }
+
+            using var buffer = new MemoryStream();
+            resource.CopyTo(buffer);
+            byte[] compressed = buffer.ToArray();
+
+            byte[] decompressed = ArchiveLibDecompressor.Decompress(compressed, 889);
+            string actualSha256 = Convert.ToHexStringLower(SHA256.HashData(decompressed));
+
+            _selfTestPassed = actualSha256 == ExpectedFixtureSha256;
+            _selfTestDetail = _selfTestPassed == true
+                ? $"Self-test: decompressed {compressed.Length} → {decompressed.Length} bytes, SHA-256 matches the reference C++ output."
+                : $"Self-test failed: SHA-256 mismatch ({actualSha256}).";
+        }
+        catch (Exception exception)
+        {
+            _selfTestPassed = false;
+            _selfTestDetail = exception.Message;
+        }
+    }
+}

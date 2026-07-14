@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Hoopful.Formats\Hoopful.Formats.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\tests\Hoopful.Tests\Fixtures\*.cmp" LinkBase="Fixtures" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\tests\Hoopful.Tests\Fixtures\*.out" LinkBase="Fixtures" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\tests\Hoopful.Tests\Fixtures\Files\*" LinkBase="Fixtures\Files" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

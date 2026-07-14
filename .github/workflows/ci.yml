@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-test:
+    name: build & test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore Hoopful.sln
+
+      - name: Check formatting
+        run: dotnet format Hoopful.sln --verify-no-changes --no-restore
+
+      - name: Build (Release)
+        run: dotnet build Hoopful.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test Hoopful.sln --configuration Release --no-build --logger "console;verbosity=normal"
+
+  publish-blazor:
+    name: publish Blazor WebAssembly sample
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish
+        run: dotnet publish samples/Hoopful.Browser/Hoopful.Browser.csproj --configuration Release --output artifacts/blazor
+
+      - name: Upload published site
+        uses: actions/upload-artifact@v4
+        with:
+          name: blazor-wasm-sample
+          path: artifacts/blazor/wwwroot
+
+  benchmark-smoke:
+    # Quick sanity run (dry job) so benchmark code cannot rot; real measurements
+    # are run manually — see README.
+    name: benchmark smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run benchmarks (dry job)
+        run: >
+          dotnet run --project benchmarks/Hoopful.Benchmarks
+          --configuration Release --
+          --filter '*' --job Dry

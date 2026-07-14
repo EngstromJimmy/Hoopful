@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Hoopful.Cli</RootNamespace>
+    <AssemblyName>hoopful</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Hoopful.ArchiveLib\Hoopful.ArchiveLib.csproj" />
+    <ProjectReference Include="..\..\src\Hoopful.Formats\Hoopful.Formats.csproj" />
+  </ItemGroup>
+
+</Project>

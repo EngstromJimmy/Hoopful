@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hoopful — a hoopful of embroideries</title>
+    <base href="/" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="css/app.css" />
+    <style>
+        /* boot screen: thread the needle while .NET loads */
+        #boot {
+            min-height: 100dvh;
+            display: grid;
+            place-content: center;
+            gap: 1rem;
+            justify-items: center;
+            font-family: Georgia, "Times New Roman", serif;
+            color: #6d5c47;
+            background: #f5eee1;
+        }
+        @media (prefers-color-scheme: dark) {
+            #boot { background: #171320; color: #a394b3; }
+        }
+        #boot .boot-hoop {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            border: 4px solid #b57e22;
+            position: relative;
+        }
+        #boot .boot-hoop::before {
+            content: "";
+            position: absolute;
+            inset: 7px;
+            border-radius: 50%;
+            border: 2.5px dashed #bd3b24;
+            animation: boot-spin 1.6s linear infinite;
+        }
+        #boot p { font-style: italic; margin: 0; }
+        @keyframes boot-spin { to { rotate: 360deg; } }
+        @media (prefers-reduced-motion: reduce) { #boot .boot-hoop::before { animation: none; } }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div id="boot">
+            <div class="boot-hoop" aria-hidden="true"></div>
+            <p>Threading the needle…</p>
+        </div>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+
+</html>

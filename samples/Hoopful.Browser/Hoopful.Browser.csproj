@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Hoopful.Browser</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.*" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Hoopful.Formats\Hoopful.Formats.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Golden fixture bundled into the app for the in-browser self-test. -->
+    <EmbeddedResource Include="Fixtures\hus_small_heart_x.cmp" LogicalName="Hoopful.Browser.Fixture.cmp" />
+  </ItemGroup>
+
+</Project>
