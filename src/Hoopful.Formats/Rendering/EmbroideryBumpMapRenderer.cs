@@ -81,53 +81,53 @@ public static class EmbroideryBumpMapRenderer
             switch (stitch.Type)
             {
                 case StitchType.Normal when stitch.X != 0 || stitch.Y != 0:
-                {
-                    var start = (X: xBefore / scale, Y: yBefore / scale);
-                    var middle = (X: (xBefore + (stitch.X / 2)) / scale, Y: (yBefore + (stitch.Y / 2)) / scale);
-                    var stop = (X: (xBefore + stitch.X) / scale, Y: (yBefore + stitch.Y) / scale);
-
-                    Color threadColor = CurrentColor(design, colorIndex);
-                    var endColor = new Rgb(threadColor.R - 100, threadColor.G - 100, threadColor.B - 100).Clamp();
-
-                    // Angle-based highlight: steeper stitches catch more light.
-                    double angleRadians = Math.Asin(stitch.Y / Math.Sqrt(((double)stitch.Y * stitch.Y) + ((double)stitch.X * stitch.X)));
-                    int angleDegrees = Math.Abs((int)Math.Round(angleRadians * (180 / Math.PI), MidpointRounding.ToEven));
-                    double highlight = angleDegrees * light / 4;
-
-                    // Original quirk: bottom-up gradients swap the endpoints only.
-                    if (start.Y > stop.Y)
                     {
-                        (start, stop) = (stop, start);
-                    }
+                        var start = (X: xBefore / scale, Y: yBefore / scale);
+                        var middle = (X: (xBefore + (stitch.X / 2)) / scale, Y: (yBefore + (stitch.Y / 2)) / scale);
+                        var stop = (X: (xBefore + stitch.X) / scale, Y: (yBefore + stitch.Y) / scale);
 
-                    var middleColor = new Rgb(
-                        threadColor.R + (int)highlight,
-                        threadColor.G + (int)highlight,
-                        threadColor.B + (int)highlight).Clamp();
+                        Color threadColor = CurrentColor(design, colorIndex);
+                        var endColor = new Rgb(threadColor.R - 100, threadColor.G - 100, threadColor.B - 100).Clamp();
 
-                    int penWidth = threadWidth;
-                    if (start != middle && stop != middle)
-                    {
-                        if (threadColor.R == 0 && threadColor.G == 0 && threadColor.B == 0)
+                        // Angle-based highlight: steeper stitches catch more light.
+                        double angleRadians = Math.Asin(stitch.Y / Math.Sqrt(((double)stitch.Y * stitch.Y) + ((double)stitch.X * stitch.X)));
+                        int angleDegrees = Math.Abs((int)Math.Round(angleRadians * (180 / Math.PI), MidpointRounding.ToEven));
+                        double highlight = angleDegrees * light / 4;
+
+                        // Original quirk: bottom-up gradients swap the endpoints only.
+                        if (start.Y > stop.Y)
                         {
-                            // Black threads: dark blue sheen and a wider pen, as in the original.
-                            endColor = new Rgb(0, 0, 30);
-                            penWidth = threadWidth + 1;
+                            (start, stop) = (stop, start);
                         }
 
-                        canvas.DrawGradientLine(start, middle, endColor, middleColor, penWidth);
-                        canvas.DrawGradientLine(middle, stop, middleColor, endColor, penWidth);
-                    }
-                    else
-                    {
-                        // Degenerate (very short) stitch: solid thread colour.
-                        canvas.DrawGradientLine(start, stop, Rgb.FromColor(threadColor), Rgb.FromColor(threadColor), penWidth);
-                    }
+                        var middleColor = new Rgb(
+                            threadColor.R + (int)highlight,
+                            threadColor.G + (int)highlight,
+                            threadColor.B + (int)highlight).Clamp();
 
-                    xBefore += stitch.X;
-                    yBefore += stitch.Y;
-                    break;
-                }
+                        int penWidth = threadWidth;
+                        if (start != middle && stop != middle)
+                        {
+                            if (threadColor.R == 0 && threadColor.G == 0 && threadColor.B == 0)
+                            {
+                                // Black threads: dark blue sheen and a wider pen, as in the original.
+                                endColor = new Rgb(0, 0, 30);
+                                penWidth = threadWidth + 1;
+                            }
+
+                            canvas.DrawGradientLine(start, middle, endColor, middleColor, penWidth);
+                            canvas.DrawGradientLine(middle, stop, middleColor, endColor, penWidth);
+                        }
+                        else
+                        {
+                            // Degenerate (very short) stitch: solid thread colour.
+                            canvas.DrawGradientLine(start, stop, Rgb.FromColor(threadColor), Rgb.FromColor(threadColor), penWidth);
+                        }
+
+                        xBefore += stitch.X;
+                        yBefore += stitch.Y;
+                        break;
+                    }
 
                 case StitchType.Jump:
                     // The gradient renderer moved without drawing jumps.
